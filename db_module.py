@@ -5,9 +5,17 @@ PATH = 'db.db'
 class UserInfo:
     user_id = ''
     username = ''
-    def __init__(self, user_id, username):
+    name = ''
+    sex = ''
+    description = ''
+    photo = ''
+    def __init__(self, user_id, username, name, sex, description, photo):
         self.user_id = user_id
         self.username = username
+        self.name = name
+        self.sex = sex
+        self.description = description
+        self.photo = photo
 
 def add_user(user_id, username):
     connection = sqlite3.connect(PATH)
@@ -19,11 +27,13 @@ def add_user(user_id, username):
 def exist(user_id):
     connection = sqlite3.connect(PATH)
     cursor = connection.cursor()
-    cursor.execute(f'SELECT EXISTS(SELECT 1 FROM users WHERE user_id={user_id})')
-    if cursor.fetchone():
-        return True
-    else:
+    cursor.execute(f'SELECT user_id FROM users WHERE user_id={user_id}')
+    if cursor.fetchone() is None:
         return False
+
+    else:
+        return True
+
     connection.close()
 
 def getUser(user_id):
