@@ -2,6 +2,7 @@ import asyncio
 import sys
 import logging
 import db_module
+import io
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
@@ -10,7 +11,8 @@ from aiogram.utils.markdown import hbold
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram import F
-from service_module import make_keyboard, available_sex
+from aiogram.types import FSInputFile, URLInputFile, BufferedInputFile
+from service_module import make_keyboard, available_sex, profile_kb
 
 TOKEN = '6333638829:AAGwXlXo7HjVvq0Fn5D83VofbH4LJljpXyA'
 dp = Dispatcher()
@@ -21,10 +23,19 @@ class Profile(StatesGroup):
     choosing_description = State()
     choosing_photo = State()
     static = State()
+    profile_ended = State()
 @dp.message(CommandStart())
 async def command_start_handler(message: Message, state: FSMContext) -> None:
     if db_module.exist(message.from_user.id):
-        await message.answer(f'нажми на кнопку создать анкету')
+        kb = [
+            [types.KeyboardButton(text='создать анкету')]
+        ]
+        keyboard = types.ReplyKeyboardMarkup(
+            keyboard=kb,
+            resize_keyboard=True
+        )
+        await message.answer(f'нажми на кнопку создать анкету', reply_markup=keyboard)
+        await state.set_state(Profile.static)
     else:
         kb = [
             [types.KeyboardButton(text='создать анкету')]
@@ -42,6 +53,7 @@ async def command_start_handler(message: Message, state: FSMContext) -> None:
     F.text.lower() == 'создать анкету',
     Profile.static
 )
+@dp.message(F.text.lower() == 'изменить анкету', Profile.profile_ended)
 async def create_profile_begin(message: types.Message, state: FSMContext):
     await message.reply('введи свое имя (ну или что-нибудь смешное хз)', reply_markup=types.ReplyKeyboardRemove())
     await state.set_state(Profile.choosing_name)
@@ -53,7 +65,7 @@ async def create_profile_sex(message: Message, state: FSMContext):
     await state.update_data(name=message.text)
     await message.answer(
         text='теперь выбери свой гендер или пол или как там это называется',
-        #reply_markup=make_keyboard(available_sex)
+        reply_markup=make_keyboard(available_sex)
     )
     await state.set_state(Profile.choosing_sex)
 @dp.message(
@@ -65,7 +77,7 @@ async def create_profile_description(message: Message, state: FSMContext):
         sex=message.text
     )
     await message.answer(
-        text='напиши описание - чем любишь заниматься, хобби, увлечения, предпочтения в людях, все такое',
+        text='напиши описание - чем любишь заниматься, любимые группы, увлечения, все такое',
         reply_markup = types.ReplyKeyboardRemove()
     )
     await state.set_state(Profile.choosing_description)
@@ -97,11 +109,19 @@ async def create_profile_photo(message: Message, state: FSMContext):
     Profile.choosing_photo,
     F.photo
 )
-async def profile_finished(message: Message, state: FSMContext):
-    await message.answer(message.photo.file_id, caption='мерзкое ебало твое')
-    await message.answer(
-        text='анкета готова!\nчтобы изменить, введи создать анкету'
+async def profile_finished(message: Message, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    _desc = f"{data['name']},{data['sex']}\n{data['description']}"
+    await message.answer_photo(
+        message.photo[-1].file_id,
+        caption=_desc
     )
+    await message.answer(
+        text='анкета готова!',
+        reply_markup=make_keyboard(profile_kb)
+    )
+    await state.set_state(Profile.profile_ended)
+    await state.set_data(photo_id=message.photo[-1].file_id)
 
 async def main() -> None:
     bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
