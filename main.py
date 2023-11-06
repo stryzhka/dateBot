@@ -12,7 +12,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram import F
 from aiogram.types import FSInputFile, URLInputFile, BufferedInputFile
-from service_module import make_keyboard, available_sex, profile_kb
+from service_module import make_keyboard, available_sex, profile_kb, static_kb
 
 TOKEN = '6333638829:AAGwXlXo7HjVvq0Fn5D83VofbH4LJljpXyA'
 dp = Dispatcher()
@@ -27,14 +27,7 @@ class Profile(StatesGroup):
 @dp.message(CommandStart())
 async def command_start_handler(message: Message, state: FSMContext) -> None:
     if db_module.exist(message.from_user.id):
-        kb = [
-            [types.KeyboardButton(text='создать анкету')]
-        ]
-        keyboard = types.ReplyKeyboardMarkup(
-            keyboard=kb,
-            resize_keyboard=True
-        )
-        await message.answer(f'нажми на кнопку создать анкету', reply_markup=keyboard)
+        await message.answer(f'у тебя уже есть анкета', reply_markup=make_keyboard(static_kb))
         await state.set_state(Profile.static)
     else:
         kb = [
@@ -129,8 +122,11 @@ async def profile_finished(message: Message, state: FSMContext, bot: Bot):
 )
 async def profile_save(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
+    photo_path = f"photos/{data['photo_id']}.jpg"
+    print(photo_path)
+    db_module.update_user(message.from_user.id, data['name'], data['sex'], data['description'], photo_path)
     await message.answer(
-        text=str(data)
+        text=photo_path
     )
 
 async def main() -> None:

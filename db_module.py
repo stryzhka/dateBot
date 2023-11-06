@@ -24,10 +24,19 @@ def add_user(user_id, username):
     connection.commit()
     connection.close()
 
+def update_user(user_id, name, sex, description, photo):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'UPDATE users SET name = ? where user_id=?', (name, user_id))
+    cursor.execute(f'UPDATE users SET sex = ? where user_id=?', (sex, user_id))
+    cursor.execute(f'UPDATE users SET description = ? where user_id=?', (description, user_id))
+    cursor.execute(f'UPDATE users SET photo = ? where user_id=?', (photo, user_id))
+    connection.commit()
+    connection.close()
 def exist(user_id):
     connection = sqlite3.connect(PATH)
     cursor = connection.cursor()
-    cursor.execute(f'SELECT user_id FROM users WHERE user_id={user_id}')
+    cursor.execute(f'SELECT photo FROM users WHERE user_id={user_id}')
     if cursor.fetchone() is None:
         return False
 
@@ -36,7 +45,7 @@ def exist(user_id):
 
     connection.close()
 
-def getUser(user_id):
+def get_user(user_id):
     connection = sqlite3.connect(PATH)
     cursor = connection.cursor()
     cursor.execute(f'SELECT user_id, username FROM users WHERE user_id={user_id}')
