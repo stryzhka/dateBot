@@ -110,6 +110,7 @@ async def create_profile_photo(message: Message, state: FSMContext):
     F.photo
 )
 async def profile_finished(message: Message, state: FSMContext, bot: Bot):
+    await state.update_data(photo_id=message.photo[-1].file_id)
     data = await state.get_data()
     _desc = f"{data['name']},{data['sex']}\n{data['description']}"
     await message.answer_photo(
@@ -121,7 +122,16 @@ async def profile_finished(message: Message, state: FSMContext, bot: Bot):
         reply_markup=make_keyboard(profile_kb)
     )
     await state.set_state(Profile.profile_ended)
-    await state.set_data(photo_id=message.photo[-1].file_id)
+
+@dp.message(
+    Profile.profile_ended,
+    F.text == 'сохранить анкету'
+)
+async def profile_save(message: Message, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    await message.answer(
+        text=str(data)
+    )
 
 async def main() -> None:
     bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
