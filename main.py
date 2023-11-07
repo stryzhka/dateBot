@@ -12,7 +12,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram import F
 from aiogram.types import FSInputFile, URLInputFile, BufferedInputFile
-from service_module import make_keyboard, available_sex, profile_kb, static_kb
+from service_module import make_keyboard, available_sex, profile_kb, static_kb, profile_kb1
 
 TOKEN = '6333638829:AAGwXlXo7HjVvq0Fn5D83VofbH4LJljpXyA'
 dp = Dispatcher()
@@ -24,6 +24,7 @@ class Profile(StatesGroup):
     choosing_photo = State()
     static = State()
     profile_ended = State()
+    in_profile = State()
 @dp.message(CommandStart())
 async def command_start_handler(message: Message, state: FSMContext) -> None:
     if db_module.exist(message.from_user.id):
@@ -47,6 +48,7 @@ async def command_start_handler(message: Message, state: FSMContext) -> None:
     Profile.static
 )
 @dp.message(F.text.lower() == 'изменить анкету', Profile.profile_ended)
+@dp.message(F.text.lower() == 'изменить анкету', Profile.static)
 async def create_profile_begin(message: types.Message, state: FSMContext):
     await message.reply('введи свое имя (ну или что-нибудь смешное хз)', reply_markup=types.ReplyKeyboardRemove())
     await state.set_state(Profile.choosing_name)
@@ -104,12 +106,14 @@ async def create_profile_photo(message: Message, state: FSMContext):
 )
 async def profile_finished(message: Message, state: FSMContext, bot: Bot):
     await state.update_data(photo_id=message.photo[-1].file_id)
+    await state.update_data(photo=message.photo[-1])
     data = await state.get_data()
     _desc = f"{data['name']},{data['sex']}\n{data['description']}"
     await message.answer_photo(
         message.photo[-1].file_id,
         caption=_desc
     )
+
     await message.answer(
         text='анкета готова!',
         reply_markup=make_keyboard(profile_kb)
@@ -124,10 +128,42 @@ async def profile_save(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     photo_path = f"photos/{data['photo_id']}.jpg"
     print(photo_path)
+    await bot.download(
+        data['photo'],
+        destination=photo_path
+    )
     db_module.update_user(message.from_user.id, data['name'], data['sex'], data['description'], photo_path)
     await message.answer(
-        text=photo_path
+        text='анкета сохранена',
+        reply_markup=make_keyboard(static_kb)
     )
+
+@dp.message(
+    F.text == 'моя анкета',
+    Profile.static
+)
+async def my_profile(message: Message, state: FSMContext, bot: Bot):
+    user = db_module.get_user(message.from_user.id)
+
+    print(user)
+    await message.answer(
+        text = f"{user.name}, {user.sex}\n{user.description}",
+        reply_markup=make_keyboard(profile_kb1)
+    )
+    #state.set_state(Profile.in_profile)
+    #print(state.get_state())
+
+@dp.message(
+    Profile.static,
+    F.text == 'вернуться в меню'
+)
+async def menu(message: Message, state: FSMContext, bot: Bot):
+    await message.answer(
+        text="выбери действие",
+        reply_markup=make_keyboard(static_kb)
+
+    )
+    await state.set_state(Profile.static)
 
 async def main() -> None:
     bot = Bot(TOKEN, parse_mode=ParseMode.HTML)

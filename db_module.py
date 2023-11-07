@@ -48,8 +48,9 @@ def exist(user_id):
 def get_user(user_id):
     connection = sqlite3.connect(PATH)
     cursor = connection.cursor()
-    cursor.execute(f'SELECT user_id, username FROM users WHERE user_id={user_id}')
+    cursor.execute(f'SELECT user_id, username, name, sex, description, photo FROM users WHERE user_id={user_id}')
     r = cursor.fetchone()
-    user = UserInfo(r[0], r[1])
+    user = UserInfo(0, '', r[2], r[3], r[4], r[5])
+
     connection.close()
     return user
