@@ -6,7 +6,7 @@ import io
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 from aiogram.utils.markdown import hbold
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
@@ -108,7 +108,8 @@ async def profile_finished(message: Message, state: FSMContext, bot: Bot):
     await state.update_data(photo_id=message.photo[-1].file_id)
     await state.update_data(photo=message.photo[-1])
     data = await state.get_data()
-    _desc = f"{data['name']},{data['sex']}\n{data['description']}"
+    _desc = f"{data['name']}, {data['sex']}\n{data['description']}"
+
     await message.answer_photo(
         message.photo[-1].file_id,
         caption=_desc
@@ -137,17 +138,22 @@ async def profile_save(message: Message, state: FSMContext, bot: Bot):
         text='анкета сохранена',
         reply_markup=make_keyboard(static_kb)
     )
+    await state.set_state(Profile.static)
 
 @dp.message(
     F.text == 'моя анкета',
     Profile.static
 )
 async def my_profile(message: Message, state: FSMContext, bot: Bot):
+    if await state.get_state() == Profile.static:
+        print('static!')
     user = db_module.get_user(message.from_user.id)
 
-    print(user)
-    await message.answer(
-        text = f"{user.name}, {user.sex}\n{user.description}",
+    print(user.photo)
+    img = FSInputFile(user.photo)
+    await message.answer_photo(
+        img,
+        caption = f"{user.name}, {user.sex}\n{user.description}",
         reply_markup=make_keyboard(profile_kb1)
     )
     #state.set_state(Profile.in_profile)

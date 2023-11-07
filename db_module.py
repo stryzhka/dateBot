@@ -1,4 +1,5 @@
 import sqlite3
+import io
 
 PATH = 'db.db'
 
@@ -16,6 +17,7 @@ class UserInfo:
         self.sex = sex
         self.description = description
         self.photo = photo
+
 
 def add_user(user_id, username):
     connection = sqlite3.connect(PATH)
