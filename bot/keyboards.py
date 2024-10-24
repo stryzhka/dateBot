@@ -6,6 +6,7 @@ profile_kb = ['изменить анкету', 'сохранить анкету'
 static_kb = ['смотреть анкеты', 'моя анкета']
 profile_kb1 = ['изменить анкету', 'вернуться в меню']
 start_kb = ['создать анкету']
+watching_kb = ['+', '-', 'вернуться в меню']
 def make_keyboard(items: list[str]) -> types.ReplyKeyboardMarkup:
     #row = [KeyboardButton(text=item) for item in items]
     kb = [[]]

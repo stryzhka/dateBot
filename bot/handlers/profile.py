@@ -12,9 +12,9 @@ from aiogram import types
 import bot.db as db
 from aiogram import Router
 
-router1 = Router()
+router = Router()
 
-@router1.message(CommandStart())
+@router.message(CommandStart())
 async def command_start_handler(message: Message, state: FSMContext) -> None:
     if db.exist(message.from_user.id):
         await message.answer(f'у тебя уже есть анкета', reply_markup=make_keyboard(static_kb))
@@ -22,33 +22,42 @@ async def command_start_handler(message: Message, state: FSMContext) -> None:
     else:
         await message.answer(f'привет, {hbold(message.from_user.full_name)}\n, создай анкету', reply_markup=make_keyboard(start_kb))
         db.add_user(message.from_user.id, message.from_user.username)
-        await state.set_state(ProfileStates.static)
+        await state.set_state(ProfileStates.setup)
 
-@router1.message(
+@router.message(
     F.text.lower() == 'создать анкету',
-    ProfileStates.static
+    ProfileStates.setup
 )
-@router1.message(F.text.lower() == 'изменить анкету', ProfileStates.profile_ended)
-@router1.message(F.text.lower() == 'изменить анкету', ProfileStates.static)
-async def create_ProfileStates_begin(message: types.Message, state: FSMContext):
+@router.message(F.text.lower() == 'изменить анкету', ProfileStates.profile_ended)
+@router.message(F.text.lower() == 'изменить анкету', ProfileStates.static)
+async def create_profile_begin(message: types.Message, state: FSMContext):
     await message.reply('введи свое имя (ну или что-нибудь смешное хз)', reply_markup=types.ReplyKeyboardRemove())
     await state.set_state(ProfileStates.choosing_name)
 
-@router1.message(
+@router.message(
     ProfileStates.choosing_name
 )
-async def create_ProfileStates_sex(message: Message, state: FSMContext):
+async def create_profile_sex(message: Message, state: FSMContext):
+    print(message.entities)
+    if message.entities != None:
+        for e in message.entities:
+            if e.type in ['mention', 'url', 'email', 'phone_number']:
+                await message.answer(
+                    text='что-то пошло не так, попробуй еще раз 0_0'
+                )
+                return
+        
     await state.update_data(name=message.text)
     await message.answer(
         text='теперь выбери свой гендер или пол или как там это называется',
         reply_markup=make_keyboard(available_sex)
     )
     await state.set_state(ProfileStates.choosing_sex)
-@router1.message(
+@router.message(
     ProfileStates.choosing_sex,
     F.text.in_(available_sex)
 )
-async def create_ProfileStates_description(message: Message, state: FSMContext):
+async def create_profile_description(message: Message, state: FSMContext):
     await state.update_data(
         sex=message.text
     )
@@ -58,21 +67,21 @@ async def create_ProfileStates_description(message: Message, state: FSMContext):
     )
     await state.set_state(ProfileStates.choosing_description)
 
-@router1.message(
+@router.message(
     ProfileStates.choosing_description,
     F.text.len() > 128
 )
-async def create_ProfileStates_description_fail(message: Message, state: FSMContext):
+async def create_profile_description_fail(message: Message, state: FSMContext):
     await message.answer(
         text='описание слишком длинное! попробуй сократить, максимум - 128 символов',
     )
     await state.set_state(ProfileStates.choosing_description)
 
-@router1.message(
+@router.message(
     ProfileStates.choosing_description,
     F.text.len() <= 128
 )
-async def create_ProfileStates_photo(message: Message, state: FSMContext):
+async def create_profile_photo(message: Message, state: FSMContext):
     await state.update_data(
         description=message.text
     )
@@ -81,11 +90,11 @@ async def create_ProfileStates_photo(message: Message, state: FSMContext):
     )
     await state.set_state(ProfileStates.choosing_photo)
 
-@router1.message(
+@router.message(
     ProfileStates.choosing_photo,
     F.photo
 )
-async def ProfileStates_finished(message: Message, state: FSMContext, bot: Bot):
+async def profile_finished(message: Message, state: FSMContext, bot: Bot):
     await state.update_data(photo_id=message.photo[-1].file_id)
     await state.update_data(photo=message.photo[-1])
     data = await state.get_data()
@@ -102,11 +111,11 @@ async def ProfileStates_finished(message: Message, state: FSMContext, bot: Bot):
     )
     await state.set_state(ProfileStates.profile_ended)
 
-@router1.message(
+@router.message(
     ProfileStates.profile_ended,
     F.text == 'сохранить анкету'
 )
-async def ProfileStates_save(message: Message, state: FSMContext, bot: Bot):
+async def profile_save(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     photo_path = f"photos/{data['photo_id']}.jpg"
     print(photo_path)
@@ -121,11 +130,11 @@ async def ProfileStates_save(message: Message, state: FSMContext, bot: Bot):
     )
     await state.set_state(ProfileStates.static)
 
-@router1.message(
+@router.message(
     F.text == 'моя анкета',
     ProfileStates.static
 )
-async def my_ProfileStates(message: Message, state: FSMContext, bot: Bot):
+async def my_profile(message: Message, state: FSMContext, bot: Bot):
     if await state.get_state() == ProfileStates.static:
         print('static!')
     user = db.get_user(message.from_user.id)
@@ -140,9 +149,13 @@ async def my_ProfileStates(message: Message, state: FSMContext, bot: Bot):
     #state.set_state(ProfileStates.in_ProfileStates)
     #print(state.get_state())
 
-@router1.message(
+@router.message(
     ProfileStates.static,
     F.text == 'вернуться в меню'
+)
+@router.message(
+    F.text.lower() == 'вернуться в меню',
+    ProfileStates.watching 
 )
 async def menu(message: Message, state: FSMContext, bot: Bot):
     await message.answer(
@@ -151,3 +164,5 @@ async def menu(message: Message, state: FSMContext, bot: Bot):
 
     )
     await state.set_state(ProfileStates.static)
+
+

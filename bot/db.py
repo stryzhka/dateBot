@@ -1,9 +1,10 @@
 import sqlite3
 import io
 
-PATH = 'db.db'
+from bot.config import PATH
 
 class UserInfo:
+    id = ''
     user_id = ''
     username = ''
     name = ''
@@ -52,7 +53,36 @@ def get_user(user_id):
     cursor = connection.cursor()
     cursor.execute(f'SELECT user_id, username, name, sex, description, photo FROM users WHERE user_id={user_id}')
     r = cursor.fetchone()
-    user = UserInfo(0, '', r[2], r[3], r[4], r[5])
+    user = UserInfo(r[0], '', r[2], r[3], r[4], r[5])
 
     connection.close()
     return user
+
+def get_user_by_id(id):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT user_id, username, name, sex, description, photo FROM users WHERE id={id}')
+    r = cursor.fetchone()
+    print(r)
+    user = UserInfo(r[0], '', r[2], r[3], r[4], r[5])
+    connection.close()
+    return user
+
+def get_users_list():
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT user_id FROM users')
+    r = cursor.fetchall()
+    l = []
+    for el in r:
+        l.append(el[0])
+    connection.close()
+    return l
+
+def get_len():
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute('SELECT COUNT(*) FROM users')
+    r = cursor.fetchone()
+    connection.close()
+    return r
