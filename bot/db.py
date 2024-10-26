@@ -18,12 +18,16 @@ class UserInfo:
         self.sex = sex
         self.description = description
         self.photo = photo
+        #self.id = id
 
-
-def add_user(user_id, username):
+def add_user(user_id, username, name, sex, description, photo):
     connection = sqlite3.connect(PATH)
     cursor = connection.cursor()
     cursor.execute('INSERT INTO Users (user_id, username) VALUES (?, ?)', (user_id, username))
+    cursor.execute(f'UPDATE users SET name = ? where user_id=?', (name, user_id))
+    cursor.execute(f'UPDATE users SET sex = ? where user_id=?', (sex, user_id))
+    cursor.execute(f'UPDATE users SET description = ? where user_id=?', (description, user_id))
+    cursor.execute(f'UPDATE users SET photo = ? where user_id=?', (photo, user_id))
     connection.commit()
     connection.close()
 
@@ -42,7 +46,6 @@ def exist(user_id):
     cursor.execute(f'SELECT photo FROM users WHERE user_id={user_id}')
     if cursor.fetchone() is None:
         return False
-
     else:
         return True
 
@@ -86,3 +89,29 @@ def get_len():
     r = cursor.fetchone()
     connection.close()
     return r
+
+def add_match(send_id, got_id):
+    if not match_exist(send_id, got_id):
+        connection = sqlite3.connect(PATH)
+        cursor = connection.cursor()
+        cursor.execute('INSERT INTO matches (send_id, got_id) VALUES (?, ?)', (send_id, got_id))
+        connection.commit()
+        connection.close()
+
+def get_got_id(user_id):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT send_id FROM matches where got_id={user_id}')
+    r = cursor.fetchall()
+    return r
+
+def match_exist(send_id, got_id):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT got_id FROM matches WHERE send_id={send_id}')
+    
+    for e in cursor.fetchall():
+        if e[0] == got_id:
+            return True
+
+    connection.close()

@@ -21,7 +21,7 @@ async def command_start_handler(message: Message, state: FSMContext) -> None:
         await state.set_state(ProfileStates.static)
     else:
         await message.answer(f'привет, {hbold(message.from_user.full_name)}\n, создай анкету', reply_markup=make_keyboard(start_kb))
-        db.add_user(message.from_user.id, message.from_user.username)
+        #db.add_user(message.from_user.id, message.from_user.username)
         await state.set_state(ProfileStates.setup)
 
 @router.message(
@@ -82,6 +82,13 @@ async def create_profile_description_fail(message: Message, state: FSMContext):
     F.text.len() <= 128
 )
 async def create_profile_photo(message: Message, state: FSMContext):
+    if message.entities != None:
+        for e in message.entities:
+            if e.type in ['mention', 'url', 'email', 'phone_number']:
+                await message.answer(
+                    text='что-то пошло не так, попробуй еще раз 0_0'
+                )
+                return
     await state.update_data(
         description=message.text
     )
@@ -106,7 +113,7 @@ async def profile_finished(message: Message, state: FSMContext, bot: Bot):
     )
 
     await message.answer(
-        text='анкета готова!',
+        text='анкета готова! теперь сохрани ее',
         reply_markup=make_keyboard(profile_kb)
     )
     await state.set_state(ProfileStates.profile_ended)
@@ -123,7 +130,7 @@ async def profile_save(message: Message, state: FSMContext, bot: Bot):
         data['photo'],
         destination=photo_path
     )
-    db.update_user(message.from_user.id, data['name'], data['sex'], data['description'], photo_path)
+    db.add_user(message.from_user.id, message.from_user.username, data['name'], data['sex'], data['description'], photo_path)
     await message.answer(
         text='анкета сохранена',
         reply_markup=make_keyboard(static_kb)
@@ -165,4 +172,11 @@ async def menu(message: Message, state: FSMContext, bot: Bot):
     )
     await state.set_state(ProfileStates.static)
 
-
+async def words_check(message: Message):
+    if message.entities != None:
+        for e in message.entities:
+            if e.type in ['mention', 'url', 'email', 'phone_number']:
+                await message.answer(
+                    text='что-то пошло не так, попробуй еще раз 0_0'
+                )
+                return
