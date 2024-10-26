@@ -45,18 +45,21 @@ def exist(user_id):
     cursor = connection.cursor()
     cursor.execute(f'SELECT photo FROM users WHERE user_id={user_id}')
     if cursor.fetchone() is None:
+        connection.close()
         return False
     else:
+        connection.close()
         return True
 
-    connection.close()
+    
 
 def get_user(user_id):
     connection = sqlite3.connect(PATH)
     cursor = connection.cursor()
     cursor.execute(f'SELECT user_id, username, name, sex, description, photo FROM users WHERE user_id={user_id}')
     r = cursor.fetchone()
-    user = UserInfo(r[0], '', r[2], r[3], r[4], r[5])
+    print(r)
+    user = UserInfo(r[0], r[1], r[2], r[3], r[4], r[5])
 
     connection.close()
     return user
@@ -103,7 +106,10 @@ def get_got_id(user_id):
     cursor = connection.cursor()
     cursor.execute(f'SELECT send_id FROM matches where got_id={user_id}')
     r = cursor.fetchall()
+    connection.close()
     return r
+
+
 
 def match_exist(send_id, got_id):
     connection = sqlite3.connect(PATH)
@@ -113,5 +119,23 @@ def match_exist(send_id, got_id):
     for e in cursor.fetchall():
         if e[0] == got_id:
             return True
+    connection.close()
 
+    
+
+def get_matches(id):
+    l = []
+    if len(get_got_id(id)) > 0:
+        for e in get_got_id(id):
+            user = get_user(e[0])
+            print("user", user.username)
+            l.append(user)
+    return l
+
+def remove_match(send_id, got_id):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'DELETE FROM matches where send_id={send_id} and got_id={got_id}')
+    connection.commit()
+    print('cursor', cursor.fetchall())
     connection.close()

@@ -2,3 +2,4 @@ __pycache__/
 .venv/
 photos/
 bot/__pycache__/
+handlers/__pycache__

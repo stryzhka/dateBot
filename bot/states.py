@@ -9,4 +9,4 @@ class ProfileStates(StatesGroup):
     profile_ended = State()
     in_profile = State()
     watching = State()
-    got_match = State()
+    watching_matches = State()

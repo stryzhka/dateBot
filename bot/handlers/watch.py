@@ -58,7 +58,7 @@ async def match(message: Message, state: FSMContext, bot: Bot):
         db.add_match(message.from_user.id, data['current'])
         await bot.send_message(
             chat_id=data['current'],
-            text = f"TEST"
+            text = f"у тебя {len(db.get_got_id(data['current']))} симпатий"
             )
     except TelegramBadRequest:
         print("cant send request")    
@@ -93,7 +93,6 @@ async def match(message: Message, state: FSMContext, bot: Bot):
     ProfileStates.watching 
 )
 async def skip(message: Message, state: FSMContext, bot: Bot):
-    #print(db.get_got_id(545198961))
     data = await state.get_data()
     l = db.get_users_list()
     l.remove(db.get_user(message.from_user.id).user_id)

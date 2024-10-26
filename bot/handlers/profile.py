@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram import F
 
 from aiogram.types import FSInputFile, URLInputFile, BufferedInputFile
-from bot.keyboards import make_keyboard, available_sex, profile_kb, static_kb, profile_kb1,  start_kb
+from bot.keyboards import make_keyboard, available_sex, profile_kb, static_kb, profile_kb1,  start_kb, got_match_kb
 from bot.states import ProfileStates
 from bot.misc import Bot
 from aiogram import types
@@ -168,7 +168,6 @@ async def menu(message: Message, state: FSMContext, bot: Bot):
     await message.answer(
         text="выбери действие",
         reply_markup=make_keyboard(static_kb)
-
     )
     await state.set_state(ProfileStates.static)
 
@@ -180,3 +179,67 @@ async def words_check(message: Message):
                     text='что-то пошло не так, попробуй еще раз 0_0'
                 )
                 return
+
+@router.message(
+    F.text.lower() == 'симпатии',
+    ProfileStates.static
+)
+async def start_watch_matches(message: Message, state: FSMContext, bot: Bot):
+    l = db.get_matches(message.from_user.id)
+    print(l)
+    if (len(l) > 0):
+        await state.update_data(
+            match_index=0
+        )
+        data = await state.get_data()
+        img = FSInputFile(l[data['match_index']].photo)
+        await message.answer_photo(
+            img,
+            caption = f"{l[data['match_index']].name}, {l[data['match_index']].sex}\n{l[data['match_index']].description}",
+            reply_markup=make_keyboard(got_match_kb)
+        )
+        await state.set_state(ProfileStates.watching_matches)
+    else:
+        await message.answer(
+        text="нет симпатий :("
+    )
+        
+@router.message(
+    F.text.lower() == '<3',
+    ProfileStates.watching_matches
+)
+async def match_like(message: Message, state: FSMContext, bot: Bot):
+    l = db.get_matches(message.from_user.id)
+    data = await state.get_data()
+    print(l[data['match_index']].username)
+    await message.answer(
+        text=f'@{l[data['match_index']].username} начинай общаться!'
+    )
+    await bot.send_message(
+        chat_id=l[data['match_index']].user_id,
+        text=f'на твою симпатию ответил @{db.get_user(message.from_user.id).username}, начинай общаться!'
+    )
+
+    db.remove_match(l[data['match_index']].user_id, message.from_user.id)
+    print("index", data['match_index'])
+    print("len", len(l))
+    if data['match_index'] + 1 >= len(l):
+        await message.answer(
+            text='больше нет симпатий',
+            reply_markup=make_keyboard(static_kb)
+        )
+        await state.set_state(ProfileStates.static)
+    else:
+        await state.update_data(
+            match_index=data['match_index'] + 1
+        )
+        data = await state.get_data()
+        img = FSInputFile(l[data['match_index']].photo)
+        await message.answer_photo(
+            img,
+            caption = f"{l[data['match_index']].name}, {l[data['match_index']].sex}\n{l[data['match_index']].description}",
+            reply_markup=make_keyboard(got_match_kb)
+        )
+
+    
+
