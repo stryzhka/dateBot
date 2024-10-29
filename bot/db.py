@@ -125,12 +125,16 @@ def match_exist(send_id, got_id):
 
 def get_matches(id):
     l = []
+    l2 = []
     if len(get_got_id(id)) > 0:
         for e in get_got_id(id):
-            user = get_user(e[0])
-            print("user", user.username)
-            l.append(user)
-    return l
+            #user = get_user(e[0])
+            #print("user", user.username)
+            l.append(e[0])
+        l.sort(reverse=True)
+        for e in l:
+            l2.append(get_user(e))
+    return l2
 
 def remove_match(send_id, got_id):
     connection = sqlite3.connect(PATH)

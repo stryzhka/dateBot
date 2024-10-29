@@ -3,3 +3,4 @@ __pycache__/
 photos/
 bot/__pycache__/
 handlers/__pycache__
+backup/
