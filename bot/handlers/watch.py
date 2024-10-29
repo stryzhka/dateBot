@@ -22,8 +22,16 @@ router = Router()
     ProfileStates.static
 )
 async def start_watch(message: Message, state: FSMContext, bot: Bot):
+    if db.is_watch_toggle(message.from_user.id) == 'False':
+        await message.answer(
+            text = 'твоя анкета отключена, твои лайки не учитываются :('
+        )
     l = db.get_users_list()
     l.remove(db.get_user(message.from_user.id).user_id)
+    for e in l:
+        if db.get_user(e).watch_toggle == "False":
+            print(db.get_user(e).username)
+            l.remove(db.get_user(e).user_id)
     await state.update_data(
         users_len=len(l),
         pos=random.randint(0, len(l)-1),
@@ -48,23 +56,26 @@ async def start_watch(message: Message, state: FSMContext, bot: Bot):
     ProfileStates.watching 
 )
 async def match(message: Message, state: FSMContext, bot: Bot):
-    
-    await message.answer(
-        text="симпатия отправлена"
-    )
     data = await state.get_data()
-    try:
-        
-        db.add_match(message.from_user.id, data['current'])
-        await bot.send_message(
-            chat_id=data['current'],
-            text = f"у тебя {len(db.get_got_id(data['current']))} симпатий"
-            )
-    except TelegramBadRequest:
-        print("cant send request")    
-        pass
+    if db.is_watch_toggle(message.from_user.id) == "True":
+        await message.answer(
+            text="симпатия отправлена"
+        )
+        try:
+            db.add_match(message.from_user.id, data['current'])
+            await bot.send_message(
+                chat_id=data['current'],
+                text = f"у тебя {len(db.get_got_id(data['current']))} симпатий"
+                )
+        except TelegramBadRequest:
+            print("cant send request")    
+            pass
     l = db.get_users_list()
     l.remove(db.get_user(message.from_user.id).user_id)
+    for e in l:
+        if db.get_user(e).watch_toggle == "False":
+            print(db.get_user(e).username)
+            l.remove(db.get_user(e).user_id)
     print(data['pos'], len(l))
     if data['pos'] + 1 >= len(l):
         await state.update_data(
@@ -96,6 +107,10 @@ async def skip(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     l = db.get_users_list()
     l.remove(db.get_user(message.from_user.id).user_id)
+    for e in l:
+        if db.get_user(e).watch_toggle == "False":
+            print(db.get_user(e).username)
+            l.remove(db.get_user(e).user_id)
     print(data['pos'], len(l))
     if data['pos'] + 1 >= len(l):
         await state.update_data(

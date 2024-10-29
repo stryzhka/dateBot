@@ -49,6 +49,25 @@ async def menu(message: Message, state: FSMContext, bot: Bot):
     )
     await state.set_state(ProfileStates.static)
 
+@router.message(
+        F.text.lower() == 'вкл выкл анкету',
+        ProfileStates.static
+)
+async def toggle_on(message: Message, state: FSMContext, bot: Bot):
+    print(db.is_watch_toggle(message.from_user.id))
+    if db.is_watch_toggle(message.from_user.id) == "True":
+        db.set_watch_toggle_false(message.from_user.id)
+        await message.answer(
+            text="теперь твоя анкета отключена, ее не будут видеть при поиске, но ты не сможешь ставить лайки",
+            reply_markup=make_keyboard(static_kb)
+        )
+    else:
+        db.set_watch_toggle_true(message.from_user.id)
+        await message.answer(
+            text="теперь твоя анкета включена, ее будут видеть при поиске и ты сможешь ставить лайки",
+            reply_markup=make_keyboard(static_kb)
+        )
+
 async def words_check(message: Message):
     if message.entities != None:
         for e in message.entities:

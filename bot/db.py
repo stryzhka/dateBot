@@ -11,6 +11,7 @@ class UserInfo:
     sex = ''
     description = ''
     photo = ''
+    watch_toggle = ''
     def __init__(self, user_id, username, name, sex, description, photo):
         self.user_id = user_id
         self.username = username
@@ -18,7 +19,7 @@ class UserInfo:
         self.sex = sex
         self.description = description
         self.photo = photo
-        #self.id = id
+        self.watch_toggle = "True"
 
 def add_user(user_id, username, name, sex, description, photo):
     connection = sqlite3.connect(PATH)
@@ -28,6 +29,7 @@ def add_user(user_id, username, name, sex, description, photo):
     cursor.execute(f'UPDATE users SET sex = ? where user_id=?', (sex, user_id))
     cursor.execute(f'UPDATE users SET description = ? where user_id=?', (description, user_id))
     cursor.execute(f'UPDATE users SET photo = ? where user_id=?', (photo, user_id))
+    cursor.execute(f'UPDATE users SET watch_toggle = ? where user_id=?', ("True", user_id))
     connection.commit()
     connection.close()
 
@@ -40,6 +42,7 @@ def update_user(user_id, name, sex, description, photo):
     cursor.execute(f'UPDATE users SET photo = ? where user_id=?', (photo, user_id))
     connection.commit()
     connection.close()
+
 def exist(user_id):
     connection = sqlite3.connect(PATH)
     cursor = connection.cursor()
@@ -56,11 +59,11 @@ def exist(user_id):
 def get_user(user_id):
     connection = sqlite3.connect(PATH)
     cursor = connection.cursor()
-    cursor.execute(f'SELECT user_id, username, name, sex, description, photo FROM users WHERE user_id={user_id}')
+    cursor.execute(f'SELECT user_id, username, name, sex, description, photo, watch_toggle FROM users WHERE user_id={user_id}')
     r = cursor.fetchone()
-    print(r)
+    #print(r)
     user = UserInfo(r[0], r[1], r[2], r[3], r[4], r[5])
-
+    user.watch_toggle = r[6]
     connection.close()
     return user
 
@@ -69,8 +72,9 @@ def get_user_by_id(id):
     cursor = connection.cursor()
     cursor.execute(f'SELECT user_id, username, name, sex, description, photo FROM users WHERE id={id}')
     r = cursor.fetchone()
-    print(r)
+    #print(r)
     user = UserInfo(r[0], '', r[2], r[3], r[4], r[5])
+    user.watch_toggle = r[6]
     connection.close()
     return user
 
@@ -101,6 +105,7 @@ def add_match(send_id, got_id):
         connection.commit()
         connection.close()
 
+#return db response, find all who liked got_id
 def get_got_id(user_id):
     connection = sqlite3.connect(PATH)
     cursor = connection.cursor()
@@ -115,7 +120,6 @@ def match_exist(send_id, got_id):
     connection = sqlite3.connect(PATH)
     cursor = connection.cursor()
     cursor.execute(f'SELECT got_id FROM matches WHERE send_id={send_id}')
-    
     for e in cursor.fetchall():
         if e[0] == got_id:
             return True
@@ -128,8 +132,6 @@ def get_matches(id):
     l2 = []
     if len(get_got_id(id)) > 0:
         for e in get_got_id(id):
-            #user = get_user(e[0])
-            #print("user", user.username)
             l.append(e[0])
         l.sort(reverse=True)
         for e in l:
@@ -141,5 +143,28 @@ def remove_match(send_id, got_id):
     cursor = connection.cursor()
     cursor.execute(f'DELETE FROM matches where send_id={send_id} and got_id={got_id}')
     connection.commit()
-    print('cursor', cursor.fetchall())
+    #print('cursor', cursor.fetchall())
     connection.close()
+
+def set_watch_toggle_true(user_id):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'UPDATE users SET watch_toggle = ? where user_id=?', ("True", user_id))
+    connection.commit()
+    connection.close()
+
+def set_watch_toggle_false(user_id):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'UPDATE users SET watch_toggle = ? where user_id=?', ("False", user_id))
+    connection.commit()
+    connection.close()
+
+def is_watch_toggle(user_id):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT watch_toggle FROM users WHERE user_id = {user_id}')
+    r = cursor.fetchone()
+    connection.close()
+    return (r[0])
+    
