@@ -6,7 +6,7 @@ from aiogram import F
 
 from aiogram.types import FSInputFile, URLInputFile, BufferedInputFile
 from bot.keyboards import make_keyboard, available_sex, profile_kb, static_kb, profile_kb1,  start_kb, got_match_kb
-from bot.states import ProfileStates
+from bot.states import ProfileStates, AdminStates
 from bot.misc import Bot
 from aiogram import types
 import bot.db as db
@@ -20,11 +20,9 @@ router = Router()
     ProfileStates.static
 )
 async def my_profile(message: Message, state: FSMContext, bot: Bot):
-    if await state.get_state() == ProfileStates.static:
-        print('static!')
+    #if await state.get_state() == ProfileStates.static:
+    #    print('static!')
     user = db.get_user(message.from_user.id)
-
-    print(user.photo)
     img = FSInputFile(user.photo)
     await message.answer_photo(
         img,
@@ -41,6 +39,10 @@ async def my_profile(message: Message, state: FSMContext, bot: Bot):
 @router.message(
     F.text.lower() == 'вернуться в меню',
     ProfileStates.watching 
+)
+@router.message(
+    F.text.lower() == 'вернуться в меню',
+    AdminStates.in_menu 
 )
 async def menu(message: Message, state: FSMContext, bot: Bot):
     await message.answer(

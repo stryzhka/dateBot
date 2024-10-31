@@ -133,3 +133,17 @@ async def skip(message: Message, state: FSMContext, bot: Bot):
         )
     
     print(data['current'])
+
+@router.message(
+    F.text.lower() == "жалоба",
+    ProfileStates.watching
+)
+async def send_complain(message: Message, bot: Bot, state: FSMContext):
+    await message.answer(
+        text="жалоба отправлена админам"
+    )
+    data = await state.get_data()      
+    l = db.get_users_list()
+    user = db.get_user(l[data['pos']])
+    db.add_complain(user.user_id)
+    await skip(message, state, bot)

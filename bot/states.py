@@ -10,3 +10,8 @@ class ProfileStates(StatesGroup):
     in_profile = State()
     watching = State()
     watching_matches = State()
+
+class AdminStates(StatesGroup):
+    in_menu = State()
+    writing_msg = State()
+    watching_complains = State()

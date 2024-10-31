@@ -167,4 +167,28 @@ def is_watch_toggle(user_id):
     r = cursor.fetchone()
     connection.close()
     return (r[0])
-    
+
+def is_user_admin(user_id):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT * FROM admins where user_id={user_id}')
+    r = cursor.fetchone()
+    connection.close()
+    if r is None:
+        return False
+    return True
+
+def add_complain(user_id):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f"INSERT INTO complains (user_id) VALUES({user_id})")
+    connection.commit()
+
+def remove_complain(user_id):
+    pass
+
+def add_to_blacklist(user_id):
+    pass
+
+def remove_from_blacklist(user_id):
+    pass
