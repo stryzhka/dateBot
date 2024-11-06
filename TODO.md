@@ -1,9 +1,8 @@
 ### Todo
 - [x] Turn off/on profile
-- [ ] Admin panel 
-    - [ ] message to all
-    - [ ] change photo
-    - [ ] banlist
+- [x] Admin panel 
+    - [x] message to all
+    - [x] banlist
 - [ ] Refactor? (too many logs)
 - [ ] Design
 - [ ] Deploy

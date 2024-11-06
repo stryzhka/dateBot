@@ -1,19 +1,17 @@
 from aiogram.filters import CommandStart
 from aiogram.types import Message, FSInputFile
-from aiogram.utils.markdown import hbold
 from aiogram.fsm.context import FSMContext
 from aiogram import F
-
 from aiogram.types import FSInputFile, URLInputFile, BufferedInputFile
 from bot.keyboards import make_keyboard, available_sex, profile_kb, static_kb, profile_kb1,  start_kb, got_match_kb
 from bot.states import ProfileStates, AdminStates
 from bot.misc import Bot
 from aiogram import types
+from bot.text.ProfileText import ProfileText
 import bot.db as db
 from aiogram import Router
 
 router = Router()
-
 
 @router.message(
     F.text == 'моя анкета',
@@ -46,7 +44,7 @@ async def my_profile(message: Message, state: FSMContext, bot: Bot):
 )
 async def menu(message: Message, state: FSMContext, bot: Bot):
     await message.answer(
-        text="выбери действие",
+        text=ProfileText.MENU_TEXT(),
         reply_markup=make_keyboard(static_kb)
     )
     await state.set_state(ProfileStates.static)
@@ -60,24 +58,17 @@ async def toggle_on(message: Message, state: FSMContext, bot: Bot):
     if db.is_watch_toggle(message.from_user.id) == "True":
         db.set_watch_toggle_false(message.from_user.id)
         await message.answer(
-            text="теперь твоя анкета отключена, ее не будут видеть при поиске, но ты не сможешь ставить лайки",
+            text=ProfileText.PROFILE_OFF(),
             reply_markup=make_keyboard(static_kb)
         )
     else:
         db.set_watch_toggle_true(message.from_user.id)
         await message.answer(
-            text="теперь твоя анкета включена, ее будут видеть при поиске и ты сможешь ставить лайки",
+            text=ProfileText.PROFILE_ON(),
             reply_markup=make_keyboard(static_kb)
         )
 
-async def words_check(message: Message):
-    if message.entities != None:
-        for e in message.entities:
-            if e.type in ['mention', 'url', 'email', 'phone_number']:
-                await message.answer(
-                    text='что-то пошло не так, попробуй еще раз 0_0'
-                )
-                return
+
 
 
 

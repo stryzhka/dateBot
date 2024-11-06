@@ -11,6 +11,7 @@ from bot.misc import Bot
 from aiogram import types
 import bot.db as db
 from aiogram import Router
+from bot.text.MatchesText import MatchesText
 
 router = Router()
 
@@ -35,7 +36,7 @@ async def start_watch_matches(message: Message, state: FSMContext, bot: Bot):
         await state.set_state(ProfileStates.watching_matches)
     else:
         await message.answer(
-        text="нет симпатий :("
+        text=MatchesText.NO_LIKES()
     )
         
 @router.message(
@@ -47,11 +48,11 @@ async def match_like(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     #print(l[data['match_index']].username)
     await message.answer(
-        text=f'@{l[0].username} начинай общаться!'
+        text=MatchesText.SENT_MATCH(l[0].username)
     )
     await bot.send_message(
         chat_id=l[0].user_id,
-        text=f'на твою симпатию ответил @{db.get_user(message.from_user.id).username}, начинай общаться!'
+        text=MatchesText.GOT_MATCH(db.get_user(message.from_user.id).username)
     )
 
     db.remove_match(l[0].user_id, message.from_user.id)
@@ -60,7 +61,7 @@ async def match_like(message: Message, state: FSMContext, bot: Bot):
     #print("len", len(l))
     if len(l) == 0:
         await message.answer(
-            text='больше нет симпатий',
+            text=MatchesText.END_LIKES(),
             reply_markup=make_keyboard(static_kb)
         )
         await state.set_state(ProfileStates.static)
@@ -92,7 +93,7 @@ async def match_like(message: Message, state: FSMContext, bot: Bot):
     #print("len", len(l))
     if len(l) == 0:
         await message.answer(
-            text='больше нет симпатий',
+            text=MatchesText.END_LIKES(),
             reply_markup=make_keyboard(static_kb)
         )
         await state.set_state(ProfileStates.static)

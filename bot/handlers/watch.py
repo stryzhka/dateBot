@@ -14,6 +14,7 @@ import bot.db as db
 from aiogram import Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.storage.base import StorageKey
+from bot.text.WatchText import WatchText
 
 router = Router()
 
@@ -22,14 +23,20 @@ router = Router()
     ProfileStates.static
 )
 async def start_watch(message: Message, state: FSMContext, bot: Bot):
+    if db.blacklist_exist(message.from_user.id):
+        await message.answer(
+            text=WatchText.BANNED()
+        )
     if db.is_watch_toggle(message.from_user.id) == 'False':
         await message.answer(
-            text = 'твоя анкета отключена, твои лайки не учитываются :('
+            text = WatchText.PROFILE_OFF()
         )
     l = db.get_users_list()
+    print(db.blacklist_exist(message.from_user.id))
     l.remove(db.get_user(message.from_user.id).user_id)
     for e in l:
-        if db.get_user(e).watch_toggle == "False":
+        if db.get_user(e).watch_toggle == "False" or db.blacklist_exist(e):
+            print(db.blacklist_exist(e))
             print(db.get_user(e).username)
             l.remove(db.get_user(e).user_id)
     await state.update_data(
@@ -57,23 +64,29 @@ async def start_watch(message: Message, state: FSMContext, bot: Bot):
 )
 async def match(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
-    if db.is_watch_toggle(message.from_user.id) == "True":
+    #print(db.blacklist_exist(message.from_user.id)[0][0])
+    if db.blacklist_exist(message.from_user.id):
         await message.answer(
-            text="симпатия отправлена"
+            text=WatchText.BANNED()
         )
-        try:
-            db.add_match(message.from_user.id, data['current'])
-            await bot.send_message(
-                chat_id=data['current'],
-                text = f"у тебя {len(db.get_got_id(data['current']))} симпатий"
-                )
-        except TelegramBadRequest:
-            print("cant send request")    
-            pass
+    else:
+        if db.is_watch_toggle(message.from_user.id) == "True":
+            await message.answer(
+                text=WatchText.LIKE()
+            )
+            try:
+                db.add_match(message.from_user.id, data['current'])
+                await bot.send_message(
+                    chat_id=data['current'],
+                    text = WatchText.LIKE_COUNT(len(db.get_got_id(data['current'])))
+                    )
+            except TelegramBadRequest:
+                print("cant send request")    
+                pass
     l = db.get_users_list()
     l.remove(db.get_user(message.from_user.id).user_id)
     for e in l:
-        if db.get_user(e).watch_toggle == "False":
+        if db.get_user(e).watch_toggle == "False" or db.blacklist_exist(e):
             print(db.get_user(e).username)
             l.remove(db.get_user(e).user_id)
     print(data['pos'], len(l))
@@ -107,8 +120,9 @@ async def skip(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     l = db.get_users_list()
     l.remove(db.get_user(message.from_user.id).user_id)
+
     for e in l:
-        if db.get_user(e).watch_toggle == "False":
+        if db.get_user(e).watch_toggle == "False" or db.blacklist_exist(e):
             print(db.get_user(e).username)
             l.remove(db.get_user(e).user_id)
     print(data['pos'], len(l))
@@ -140,10 +154,10 @@ async def skip(message: Message, state: FSMContext, bot: Bot):
 )
 async def send_complain(message: Message, bot: Bot, state: FSMContext):
     await message.answer(
-        text="жалоба отправлена админам"
+        text=WatchText.COMPLAIN_SENT()
     )
     data = await state.get_data()      
     l = db.get_users_list()
-    user = db.get_user(l[data['pos']])
+    user = db.get_user(l[data['pos']+1])
     db.add_complain(user.user_id)
     await skip(message, state, bot)

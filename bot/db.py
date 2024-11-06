@@ -184,11 +184,71 @@ def add_complain(user_id):
     cursor.execute(f"INSERT INTO complains (user_id) VALUES({user_id})")
     connection.commit()
 
+def get_complains():
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT * FROM complains')
+    r = cursor.fetchall()
+    l = []
+    for e in r:
+        l.append(e[0])
+    #l.sort(reverse=True)
+    l2 = []
+    for e in l:
+        l2.append(get_user(e))
+    connection.close()
+    print(l)
+    return l2
+
+def complain_exists(user_id):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT user_id FROM complains WHERE user_id={user_id}')
+    r = cursor.fetchall()
+    connection.close()
+    return r
+
 def remove_complain(user_id):
-    pass
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'DELETE FROM complains where user_id={user_id}')
+    connection.commit()
+    connection.close()
+
+def clean_complains():
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'DELETE FROM complains')
+    connection.commit()
+    connection.close()
+
+def get_blacklist():
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT * FROM blacklist')
+    r = cursor.fetchall()
+    connection.close()
+    print(r)
+    return r
 
 def add_to_blacklist(user_id):
-    pass
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'INSERT INTO blacklist (user_id) VALUES({user_id})')
+    connection.commit()
+    connection.close()
 
 def remove_from_blacklist(user_id):
-    pass
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'DELETE FROM blacklist WHERE user_id={user_id}')
+    connection.commit()
+    connection.close()
+
+def blacklist_exist(user_id):
+    connection = sqlite3.connect(PATH)
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT user_id FROM blacklist WHERE user_id={user_id}')
+    r = cursor.fetchall()
+    connection.close()
+    return r
