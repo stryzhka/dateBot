@@ -146,26 +146,35 @@ async def ban(message: Message, bot: Bot, state: FSMContext, command: CommandObj
     if args is not args.isspace():
         if db.blacklist_exist(int(args)):
             await message.answer(
-                text='пользователь уже в бане'
+                text=AdminText.ALREADY_BANNED()
             )
         else:
-            if db.complain_exists(int(args)):
+            '''if db.complain_exists(int(args)):
                 await message.answer(
-                    text='пользователь забанен'
+                    text=AdminText.BANNED()
                 )
                 db.remove_complain(int(args))
                 db.add_to_blacklist(int(args))
                 await bot.send_message(
                     chat_id=int(args),
-                    text='ты плохо себя вел!\nтебя забанили!\nтеперь ты не можешь лайкать анкеты и твою анкету не видно в поиске'
+                    text=AdminText.GOT_BAN()
                 )
             else:
                 await message.answer(
-                    text='нет жалоб на пользователя'
-                )
+                    text=AdminText.NO_COMPLAINS()
+                )'''
+            await message.answer(
+                text=AdminText.BANNED()
+            )
+            db.remove_complain(int(args))
+            db.add_to_blacklist(int(args))
+            await bot.send_message(
+                chat_id=int(args),
+                text=AdminText.GOT_BAN()
+            )
     else:
         await message.answer(
-            text='ошибка'
+            text=AdminText.ERROR()
         )
 
 @router.message(
@@ -177,22 +186,22 @@ async def unban(message: Message, bot: Bot, state: FSMContext, command: CommandO
     print(type(args))
     if args is None:
         await message.answer(
-            text='ошибка'
+            text=AdminText.ERROR()
         )
         return
     if args is not args.isspace():
         if db.blacklist_exist(int(args)):
             await message.answer(
-                text='пользователь разбанен'
+                text=AdminText.UNBANNED()
             )
             db.remove_from_blacklist(int(args))
         else:
             await message.answer(
-                text='пользователь не в бане'
+                text=AdminText.NOT_BANNED()
             )
     else:
         await message.answer(
-            text='ошибка'
+            text=AdminText.ERROR()
         )
 
 @router.message(
@@ -201,4 +210,6 @@ async def unban(message: Message, bot: Bot, state: FSMContext, command: CommandO
         )
 async def clean_complains(message: Message, bot: Bot, state: FSMContext, command: CommandObject):
     db.clean_complains()
-    await message.answer('жалобы удалены')
+    await message.answer(
+        text=AdminText.COMPLAINS_CLEAN()
+    )

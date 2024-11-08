@@ -8,5 +8,5 @@ class WatchText:
     def COMPLAIN_SENT():
         return 'жалоба отправлена админам'
     def BANNED():
-        return 'ты в бане!'
+        return 'ты забанен!'
     
