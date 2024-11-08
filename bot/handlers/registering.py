@@ -11,6 +11,7 @@ from aiogram import types
 import bot.db as db
 from aiogram import Router
 from bot.text.RegisteringText import RegisteringText
+from logger import bot_logger
 
 router = Router()
 
@@ -19,9 +20,11 @@ async def command_start_handler(message: Message, state: FSMContext) -> None:
     if db.exist(message.from_user.id):
         await message.answer(RegisteringText.START_HAS_PROFILE(), reply_markup=make_keyboard(static_kb))
         await state.set_state(ProfileStates.static)
+        bot_logger.info(f'[registering] registered user {message.from_user.username} {message.from_user.id} started')
     else:
         await message.answer(RegisteringText.START_NO_PROFILE(message.from_user.full_name), reply_markup=make_keyboard(start_kb))
         await state.set_state(ProfileStates.setup)
+        bot_logger.info(f'[registering] new user {message.from_user.username} {message.from_user.id} started')
 
 @router.message(
     F.text.lower() == 'создать анкету',
@@ -118,13 +121,16 @@ async def profile_save(message: Message, state: FSMContext, bot: Bot):
     )
     if db.exist(message.from_user.id):
         db.update_user(message.from_user.id, data['name'], data['sex'], data['description'], photo_path)
+        bot_logger.info(f'[registering] user {message.from_user.id} {message.from_user.username} updated')
     else:
         db.add_user(message.from_user.id, message.from_user.username, data['name'], data['sex'], data['description'], photo_path)
+        bot_logger.info(f'[registering] user {message.from_user.id} {message.from_user.username} registered')
     await message.answer(
         text=RegisteringText.PROFILE_READY(),
         reply_markup=make_keyboard(static_kb)
     )
     await state.set_state(ProfileStates.static)
+    
 
 async def words_check(message: Message):
     

@@ -197,7 +197,7 @@ def get_complains():
     for e in l:
         l2.append(get_user(e))
     connection.close()
-    print(l)
+    #print(l)
     return l2
 
 def complain_exists(user_id):
@@ -228,7 +228,7 @@ def get_blacklist():
     cursor.execute(f'SELECT * FROM blacklist')
     r = cursor.fetchall()
     connection.close()
-    print(r)
+    #print(r)
     return r
 
 def add_to_blacklist(user_id):

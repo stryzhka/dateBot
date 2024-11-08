@@ -17,6 +17,7 @@ from aiogram import Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.storage.base import StorageKey
 from bot.text.AdminText import AdminText
+from logger import bot_logger
 
 router = Router()
 
@@ -25,17 +26,19 @@ router = Router()
     ProfileStates.static
 )
 async def open_admin_menu(message: Message, bot: Bot, state: FSMContext):
-    print(db.is_user_admin(message.from_user.id))
+    bot_logger.warning(f'[admin] {message.from_user.id} trying to admin...')
     if db.is_user_admin(message.from_user.id):
         await state.set_state(AdminStates.in_menu)
         await message.answer(
             text=AdminText.START(),
             reply_markup=make_keyboard(admin_kb)
         )
+        bot_logger.warning(f'[admin] {message.from_user.id} entered admin')
     else:
         await message.answer(
             text=AdminText.FAIL()
         )
+        bot_logger.warning(f'[admin] {message.from_user.id} failed admin')
 
 @router.message(
     F.text.lower() == "сообщение всем пользователям",
@@ -62,6 +65,7 @@ async def send_message_to_all_users(message: Message, bot: Bot, state: FSMContex
             await message.answer(
                 text=AdminText.SEND_FAIL(e)
             )
+            bot_logger.warning(f'[admin] failed to send to {e}')
     await state.set_state(AdminStates.in_menu)
 
 @router.message(
@@ -70,7 +74,6 @@ async def send_message_to_all_users(message: Message, bot: Bot, state: FSMContex
 )
 async def start_watch_complain(message: Message, state: FSMContext, bot: Bot):
     l = db.get_complains()
-    print(l)
     if (len(l) > 0):
         await state.update_data(
             complain_index=0
@@ -137,11 +140,12 @@ async def blacklist(message: Message, bot: Bot, state: FSMContext):
         )
 async def ban(message: Message, bot: Bot, state: FSMContext, command: CommandObject):
     args = command.args
-    print(type(args))
+    #print(type(args))
     if args is None:
         await message.answer(
             text='ошибка'
         )
+        bot_logger.warning(f'[admin] {message.from_user.id} failed to ban')
         return
     if args is not args.isspace():
         if db.blacklist_exist(int(args)):
@@ -163,19 +167,29 @@ async def ban(message: Message, bot: Bot, state: FSMContext, command: CommandObj
                 await message.answer(
                     text=AdminText.NO_COMPLAINS()
                 )'''
-            await message.answer(
-                text=AdminText.BANNED()
-            )
-            db.remove_complain(int(args))
-            db.add_to_blacklist(int(args))
-            await bot.send_message(
-                chat_id=int(args),
-                text=AdminText.GOT_BAN()
-            )
+            if db.exist(int(args)):
+                await message.answer(
+                    text=AdminText.BANNED()
+                )
+                if db.complain_exists(int(args)):
+                    db.remove_complain(int(args))
+                db.add_to_blacklist(int(args))
+                await bot.send_message(
+                    chat_id=int(args),
+                    text=AdminText.GOT_BAN()
+                )
+                bot_logger.warning(f'[admin] {message.from_user.id} banned {args}')
+            else:
+                await message.answer(
+                    text=AdminText.ERROR()
+                )
+                bot_logger.warning(f'[admin] {message.from_user.id} failed to ban')
+            
     else:
         await message.answer(
             text=AdminText.ERROR()
         )
+        bot_logger.warning(f'[admin] {message.from_user.id} failed to ban')
 
 @router.message(
         Command('unban'),
@@ -183,7 +197,6 @@ async def ban(message: Message, bot: Bot, state: FSMContext, command: CommandObj
         )
 async def unban(message: Message, bot: Bot, state: FSMContext, command: CommandObject):
     args = command.args
-    print(type(args))
     if args is None:
         await message.answer(
             text=AdminText.ERROR()
@@ -194,7 +207,12 @@ async def unban(message: Message, bot: Bot, state: FSMContext, command: CommandO
             await message.answer(
                 text=AdminText.UNBANNED()
             )
+            await bot.send_message(
+                chat_id=int(args),
+                text=AdminText.GOT_UNBAN()
+            )
             db.remove_from_blacklist(int(args))
+            bot_logger.warning(f'[admin] {message.from_user.id} unbanned {args}')
         else:
             await message.answer(
                 text=AdminText.NOT_BANNED()
@@ -203,6 +221,7 @@ async def unban(message: Message, bot: Bot, state: FSMContext, command: CommandO
         await message.answer(
             text=AdminText.ERROR()
         )
+        bot_logger.warning(f'[admin] {message.from_user.id} failed to unban')
 
 @router.message(
         Command('clean'),
@@ -213,3 +232,4 @@ async def clean_complains(message: Message, bot: Bot, state: FSMContext, command
     await message.answer(
         text=AdminText.COMPLAINS_CLEAN()
     )
+    bot_logger.warning(f'[admin] {message.from_user.id} cleaned complains')

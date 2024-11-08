@@ -10,6 +10,7 @@ from aiogram import types
 from bot.text.ProfileText import ProfileText
 import bot.db as db
 from aiogram import Router
+from logger import bot_logger
 
 router = Router()
 
@@ -54,15 +55,17 @@ async def menu(message: Message, state: FSMContext, bot: Bot):
         ProfileStates.static
 )
 async def toggle_on(message: Message, state: FSMContext, bot: Bot):
-    print(db.is_watch_toggle(message.from_user.id))
+    #print(db.is_watch_toggle(message.from_user.id))
     if db.is_watch_toggle(message.from_user.id) == "True":
         db.set_watch_toggle_false(message.from_user.id)
+        bot_logger.info(f'[profile] user {message.from_user.id} toggled profile off')
         await message.answer(
             text=ProfileText.PROFILE_OFF(),
             reply_markup=make_keyboard(static_kb)
         )
     else:
         db.set_watch_toggle_true(message.from_user.id)
+        bot_logger.info(f'[profile] user {message.from_user.id} toggled profile on')
         await message.answer(
             text=ProfileText.PROFILE_ON(),
             reply_markup=make_keyboard(static_kb)

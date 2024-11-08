@@ -24,7 +24,7 @@ class RegisteringText:
         return 'скинь фотку для анкеты'
     
     def PROFILE_SAVE():
-        return 'анкета готова! теперь сохрани ее'
+        return 'анкета готова! теперь нажми сохранить анкету'
     
     def PROFILE_READY():
         return 'анкета сохранена'

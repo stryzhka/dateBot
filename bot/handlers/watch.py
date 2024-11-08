@@ -15,6 +15,7 @@ from aiogram import Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.storage.base import StorageKey
 from bot.text.WatchText import WatchText
+from logger import bot_logger
 
 router = Router()
 
@@ -32,12 +33,12 @@ async def start_watch(message: Message, state: FSMContext, bot: Bot):
             text = WatchText.PROFILE_OFF()
         )
     l = db.get_users_list()
-    print(db.blacklist_exist(message.from_user.id))
+    #print(db.blacklist_exist(message.from_user.id))
     l.remove(db.get_user(message.from_user.id).user_id)
     for e in l:
         if db.get_user(e).watch_toggle == "False" or db.blacklist_exist(e):
-            print(db.blacklist_exist(e))
-            print(db.get_user(e).username)
+            #print(db.blacklist_exist(e))
+            #print(db.get_user(e).username)
             l.remove(db.get_user(e).user_id)
     await state.update_data(
         users_len=len(l),
@@ -46,7 +47,7 @@ async def start_watch(message: Message, state: FSMContext, bot: Bot):
     )
     data = await state.get_data()
     user = db.get_user(l[data['pos']])
-    print(user.name)
+    #print(user.name)
     img = FSInputFile(user.photo)
     await message.answer_photo(
         img,
@@ -81,15 +82,15 @@ async def match(message: Message, state: FSMContext, bot: Bot):
                     text = WatchText.LIKE_COUNT(len(db.get_got_id(data['current'])))
                     )
             except TelegramBadRequest:
-                print("cant send request")    
+                bot_logger.warning("[watch] cant send request")    
                 pass
     l = db.get_users_list()
     l.remove(db.get_user(message.from_user.id).user_id)
     for e in l:
         if db.get_user(e).watch_toggle == "False" or db.blacklist_exist(e):
-            print(db.get_user(e).username)
+            #print(db.get_user(e).username)
             l.remove(db.get_user(e).user_id)
-    print(data['pos'], len(l))
+    #print(data['pos'], len(l))
     if data['pos'] + 1 >= len(l):
         await state.update_data(
             pos=0
@@ -110,7 +111,7 @@ async def match(message: Message, state: FSMContext, bot: Bot):
             reply_markup=make_keyboard(watching_kb)
         )
     
-    print(data['current'])
+    #print(data['current'])
 
 @router.message(
     F.text.lower() == '-',
@@ -123,9 +124,9 @@ async def skip(message: Message, state: FSMContext, bot: Bot):
 
     for e in l:
         if db.get_user(e).watch_toggle == "False" or db.blacklist_exist(e):
-            print(db.get_user(e).username)
+            #print(db.get_user(e).username)
             l.remove(db.get_user(e).user_id)
-    print(data['pos'], len(l))
+    #print(data['pos'], len(l))
     if data['pos'] + 1 >= len(l):
         await state.update_data(
             pos=0
@@ -146,7 +147,7 @@ async def skip(message: Message, state: FSMContext, bot: Bot):
             reply_markup=make_keyboard(watching_kb)
         )
     
-    print(data['current'])
+    #print(data['current'])
 
 @router.message(
     F.text.lower() == "жалоба",
@@ -160,4 +161,5 @@ async def send_complain(message: Message, bot: Bot, state: FSMContext):
     l = db.get_users_list()
     user = db.get_user(l[data['pos']+1])
     db.add_complain(user.user_id)
+    bot_logger.info(f'[watch] user {message.from_user.id} complain on {user.user_id}')
     await skip(message, state, bot)

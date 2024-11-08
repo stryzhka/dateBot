@@ -12,6 +12,7 @@ from aiogram import types
 import bot.db as db
 from aiogram import Router
 from bot.text.MatchesText import MatchesText
+from logger import bot_logger
 
 router = Router()
 
@@ -21,7 +22,6 @@ router = Router()
 )
 async def start_watch_matches(message: Message, state: FSMContext, bot: Bot):
     l = db.get_matches(message.from_user.id)
-    print(l)
     if (len(l) > 0):
         await state.update_data(
             match_index=0

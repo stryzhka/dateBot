@@ -5,3 +5,4 @@ bot/__pycache__/
 handlers/__pycache__
 backup/
 *.db
+*.log
