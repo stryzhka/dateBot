@@ -263,30 +263,36 @@ async def assign(message: Message, bot: Bot, state: FSMContext, command: Command
         )
         return
     if args is not args.isspace():
-        if db.exist(int(args)):
-            try:
-                if int(args) == message.from_user.id:
+        try:
+            if db.exist(int(args)) and not db.admin_exist(int(args)):
+                try:
+                    if int(args) == message.from_user.id:
+                        await message.answer(
+                            text=AdminText.ERROR()
+                        )
+                        return
+                    db.add_admin(int(args))
                     await message.answer(
-                        text=AdminText.ERROR()
+                        text=AdminText.ADMIN_ADDED()
                     )
-                    return
-                await message.answer(
-                    text=AdminText.ADMIN_ADDED()
-                )
-                await bot.send_message(
-                    chat_id=int(args),
-                    text=AdminText.GOT_ADMIN()
-                )
-                bot_logger.warning(f'[admin] {message.from_user.id} assigned {args} as admin')
-            except TelegramForbiddenError:
-                await message.answer(
-                        text=AdminText.ERROR()
+                    await bot.send_message(
+                        chat_id=int(args),
+                        text=AdminText.GOT_ADMIN()
                     )
-                bot_logger.warning(f'[admin] user {args} is unreachable')
-        else:
+                    bot_logger.warning(f'[admin] {message.from_user.id} assigned {args} as admin')
+                except TelegramForbiddenError:
+                    await message.answer(
+                            text=AdminText.ERROR()
+                        )
+                    bot_logger.warning(f'[admin] user {args} is unreachable')
+            else:
+                await message.answer(
+                    text=AdminText.ERROR()
+                )
+        except ValueError:
             await message.answer(
-                text=AdminText.ERROR()
-            )
+                    text=AdminText.ERROR()
+                )
     else:
         await message.answer(
             text=AdminText.ERROR()
@@ -305,30 +311,37 @@ async def assign(message: Message, bot: Bot, state: FSMContext, command: Command
         )
         return
     if args is not args.isspace():
-        if db.admin_exist(int(args)):
-            try:
-                if int(args) == message.from_user.id:
+        try:
+            if db.admin_exist(int(args)):
+                try:
+                    if int(args) == message.from_user.id:
+                        await message.answer(
+                            text=AdminText.ERROR()
+                        )
+                        return
+                    db.delete_admin(int(args))
                     await message.answer(
-                        text=AdminText.ERROR()
+                        text=AdminText.ADMIN_DELETED()
                     )
-                    return
-                await message.answer(
-                    text=AdminText.ADMIN_DELETED()
-                )
-                await bot.send_message(
-                    chat_id=int(args),
-                    text=AdminText.GOT_UNASSIGN()
-                )
-                bot_logger.warning(f'[admin] {message.from_user.id} unassigned {args}')
-            except:
-                await message.answer(
-                        text=AdminText.ERROR()
+                    await bot.send_message(
+                        chat_id=int(args),
+                        text=AdminText.GOT_UNASSIGN()
                     )
-                bot_logger.warning(f'[admin] user {args} is unreachable')
-        else:
+                    bot_logger.warning(f'[admin] {message.from_user.id} unassigned {args}')
+                except:
+                    await message.answer(
+                            text=AdminText.ERROR()
+                        )
+                    bot_logger.warning(f'[admin] user {args} is unreachable')
+            else:
+                await message.answer(
+                    text=AdminText.ERROR()
+                )
+        except ValueError:
             await message.answer(
-                text=AdminText.ERROR()
-            )
+                    text=AdminText.ERROR()
+                )
+    
     else:
         await message.answer(
             text=AdminText.ERROR()

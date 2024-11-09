@@ -114,7 +114,7 @@ async def profile_finished(message: Message, state: FSMContext, bot: Bot):
 async def profile_save(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     photo_path = f"photos/{data['photo_id']}.jpg"
-    print(photo_path)
+    #print(photo_path)
     await bot.download(
         data['photo'],
         destination=photo_path

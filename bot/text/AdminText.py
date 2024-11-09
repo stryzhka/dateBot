@@ -43,3 +43,7 @@ class AdminText:
         return 'тебя назначили администратором! будь осторожен...\nвход в админку: /admin'
     def GOT_UNASSIGN():
         return 'ты больше не админ!'
+    def SELF_ERROR():
+        return 'нельзя взаимодействовать с своим профилем!'
+    def CANT_BAN():
+        return 'нельзя банить админов!'
