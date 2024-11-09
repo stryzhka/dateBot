@@ -57,7 +57,7 @@ async def match_like(message: Message, state: FSMContext, bot: Bot):
             text=MatchesText.GOT_MATCH(db.get_user(message.from_user.id).username)
         )
     except TelegramForbiddenError:
-        bot_logger.warning(f'[warning] {l[0].username} {l[0].user_id} blocked bot')
+        bot_logger.warning(f'[matches] {l[0].username} {l[0].user_id} is unreachable')
 
     db.remove_match(l[0].user_id, message.from_user.id)
     l = db.get_matches(message.from_user.id)
