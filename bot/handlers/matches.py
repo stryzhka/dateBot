@@ -11,6 +11,7 @@ from bot.misc import Bot
 from aiogram import types
 import bot.db as db
 from aiogram import Router
+from aiogram.exceptions import TelegramForbiddenError
 from bot.text.MatchesText import MatchesText
 from logger import bot_logger
 
@@ -50,10 +51,13 @@ async def match_like(message: Message, state: FSMContext, bot: Bot):
     await message.answer(
         text=MatchesText.SENT_MATCH(l[0].username)
     )
-    await bot.send_message(
-        chat_id=l[0].user_id,
-        text=MatchesText.GOT_MATCH(db.get_user(message.from_user.id).username)
-    )
+    try:
+        await bot.send_message(
+            chat_id=l[0].user_id,
+            text=MatchesText.GOT_MATCH(db.get_user(message.from_user.id).username)
+        )
+    except TelegramForbiddenError:
+        bot_logger.warning(f'[warning] {l[0].username} {l[0].user_id} blocked bot')
 
     db.remove_match(l[0].user_id, message.from_user.id)
     l = db.get_matches(message.from_user.id)

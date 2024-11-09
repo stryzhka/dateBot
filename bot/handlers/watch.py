@@ -12,7 +12,7 @@ from bot.misc import Bot
 from aiogram import types, Dispatcher
 import bot.db as db
 from aiogram import Router
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.fsm.storage.base import StorageKey
 from bot.text.WatchText import WatchText
 from logger import bot_logger
@@ -65,7 +65,6 @@ async def start_watch(message: Message, state: FSMContext, bot: Bot):
 )
 async def match(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
-    #print(db.blacklist_exist(message.from_user.id)[0][0])
     if db.blacklist_exist(message.from_user.id):
         await message.answer(
             text=WatchText.BANNED()
@@ -84,6 +83,8 @@ async def match(message: Message, state: FSMContext, bot: Bot):
             except TelegramBadRequest:
                 bot_logger.warning("[watch] cant send request")    
                 pass
+            except TelegramForbiddenError:
+                bot_logger.warning(f'[watching] user {data['current']} is unreachable')
     l = db.get_users_list()
     l.remove(db.get_user(message.from_user.id).user_id)
     for e in l:

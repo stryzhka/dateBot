@@ -14,7 +14,7 @@ from bot.misc import Bot
 from aiogram import types, Dispatcher
 import bot.db as db
 from aiogram import Router
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.fsm.storage.base import StorageKey
 from bot.text.AdminText import AdminText
 from logger import bot_logger
@@ -62,6 +62,11 @@ async def send_message_to_all_users(message: Message, bot: Bot, state: FSMContex
                 text=text
             )
         except TelegramBadRequest:
+            await message.answer(
+                text=AdminText.SEND_FAIL(e)
+            )
+            bot_logger.warning(f'[admin] failed to send to {e}')
+        except TelegramForbiddenError:
             await message.answer(
                 text=AdminText.SEND_FAIL(e)
             )
@@ -167,24 +172,29 @@ async def ban(message: Message, bot: Bot, state: FSMContext, command: CommandObj
                 await message.answer(
                     text=AdminText.NO_COMPLAINS()
                 )'''
-            if db.exist(int(args)):
+            try:
+                if db.exist(int(args)):
+                    await message.answer(
+                        text=AdminText.BANNED()
+                    )
+                    if db.complain_exists(int(args)):
+                        db.remove_complain(int(args))
+                    db.add_to_blacklist(int(args))
+                    await bot.send_message(
+                        chat_id=int(args),
+                        text=AdminText.GOT_BAN()
+                    )
+                    bot_logger.warning(f'[admin] {message.from_user.id} banned {args}')
+                else:
+                    await message.answer(
+                        text=AdminText.ERROR()
+                    )
+                    bot_logger.warning(f'[admin] {message.from_user.id} failed to ban')
+            except TelegramForbiddenError:
                 await message.answer(
-                    text=AdminText.BANNED()
-                )
-                if db.complain_exists(int(args)):
-                    db.remove_complain(int(args))
-                db.add_to_blacklist(int(args))
-                await bot.send_message(
-                    chat_id=int(args),
-                    text=AdminText.GOT_BAN()
-                )
-                bot_logger.warning(f'[admin] {message.from_user.id} banned {args}')
-            else:
-                await message.answer(
-                    text=AdminText.ERROR()
-                )
-                bot_logger.warning(f'[admin] {message.from_user.id} failed to ban')
-            
+                        text=AdminText.ERROR()
+                    )
+                bot_logger.warning(f'[admin] user {args} is unreachable')
     else:
         await message.answer(
             text=AdminText.ERROR()
@@ -204,15 +214,22 @@ async def unban(message: Message, bot: Bot, state: FSMContext, command: CommandO
         return
     if args is not args.isspace():
         if db.blacklist_exist(int(args)):
-            await message.answer(
-                text=AdminText.UNBANNED()
-            )
-            await bot.send_message(
-                chat_id=int(args),
-                text=AdminText.GOT_UNBAN()
-            )
-            db.remove_from_blacklist(int(args))
-            bot_logger.warning(f'[admin] {message.from_user.id} unbanned {args}')
+            try:
+                await message.answer(
+                    text=AdminText.UNBANNED()
+                )
+                await bot.send_message(
+                    chat_id=int(args),
+                    text=AdminText.GOT_UNBAN()
+                )
+                db.remove_from_blacklist(int(args))
+                bot_logger.warning(f'[admin] {message.from_user.id} unbanned {args}')
+            except TelegramForbiddenError:
+                await message.answer(
+                        text=AdminText.ERROR()
+                    )
+                bot_logger.warning(f'[admin] user {args} is unreachable')
+                
         else:
             await message.answer(
                 text=AdminText.NOT_BANNED()
@@ -233,3 +250,87 @@ async def clean_complains(message: Message, bot: Bot, state: FSMContext, command
         text=AdminText.COMPLAINS_CLEAN()
     )
     bot_logger.warning(f'[admin] {message.from_user.id} cleaned complains')
+
+@router.message(
+    Command('assign'),
+    AdminStates.in_menu
+)
+async def assign(message: Message, bot: Bot, state: FSMContext, command: CommandObject):
+    args = command.args
+    if args is None:
+        await message.answer(
+            text=AdminText.ERROR()
+        )
+        return
+    if args is not args.isspace():
+        if db.exist(int(args)):
+            try:
+                if int(args) == message.from_user.id:
+                    await message.answer(
+                        text=AdminText.ERROR()
+                    )
+                    return
+                await message.answer(
+                    text=AdminText.ADMIN_ADDED()
+                )
+                await bot.send_message(
+                    chat_id=int(args),
+                    text=AdminText.GOT_ADMIN()
+                )
+                bot_logger.warning(f'[admin] {message.from_user.id} assigned {args} as admin')
+            except TelegramForbiddenError:
+                await message.answer(
+                        text=AdminText.ERROR()
+                    )
+                bot_logger.warning(f'[admin] user {args} is unreachable')
+        else:
+            await message.answer(
+                text=AdminText.ERROR()
+            )
+    else:
+        await message.answer(
+            text=AdminText.ERROR()
+        )
+        bot_logger.warning(f'[admin] {message.from_user.id} failed to assign')
+
+@router.message(
+    Command('unassign'),
+    AdminStates.in_menu
+)
+async def assign(message: Message, bot: Bot, state: FSMContext, command: CommandObject):
+    args = command.args
+    if args is None:
+        await message.answer(
+            text=AdminText.ERROR()
+        )
+        return
+    if args is not args.isspace():
+        if db.admin_exist(int(args)):
+            try:
+                if int(args) == message.from_user.id:
+                    await message.answer(
+                        text=AdminText.ERROR()
+                    )
+                    return
+                await message.answer(
+                    text=AdminText.ADMIN_DELETED()
+                )
+                await bot.send_message(
+                    chat_id=int(args),
+                    text=AdminText.GOT_UNASSIGN()
+                )
+                bot_logger.warning(f'[admin] {message.from_user.id} unassigned {args}')
+            except:
+                await message.answer(
+                        text=AdminText.ERROR()
+                    )
+                bot_logger.warning(f'[admin] user {args} is unreachable')
+        else:
+            await message.answer(
+                text=AdminText.ERROR()
+            )
+    else:
+        await message.answer(
+            text=AdminText.ERROR()
+        )
+        bot_logger.warning(f'[admin] {message.from_user.id} failed to unassign')

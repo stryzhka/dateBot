@@ -1,6 +1,6 @@
 class AdminText:
     def START():
-        return 'админка нефорпензабот v66.6'
+        return 'админка нефорпензабот v66.6\n команды:\n/ban [id] - бан пользователя\n/unban [id] - разбан пользователя\n/clean - очистить список жалоб\n/assign [id] - назначить админом\n/unassign [id] - разжаловать админа'
     def FAIL():
         return 'ошибка доступа'
     def INPUT():
@@ -35,3 +35,11 @@ class AdminText:
         return 'пользователь не в черном списке'
     def COMPLAINS_CLEAN():
         return 'жалобы удалены'
+    def ADMIN_ADDED():
+        return 'добавлен новый админ'
+    def ADMIN_DELETED():
+        return 'админ удален'
+    def GOT_ADMIN():
+        return 'тебя назначили администратором! будь осторожен...\nвход в админку: /admin'
+    def GOT_UNASSIGN():
+        return 'ты больше не админ!'
